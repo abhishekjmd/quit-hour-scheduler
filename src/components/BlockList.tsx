@@ -1,9 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export default function BlockList({ userId }) {
-  const [blocks, setBlocks] = useState([]);
-  const [loading, setLoading] = useState(true);
+interface Block {
+  _id: string;
+  userId: string;
+  startTime: string; // ISO string
+  endTime: string;   // ISO string
+  reminderSent: boolean;
+}
+
+interface BlockListProps {
+  userId: string;
+}
+
+export default function BlockList({ userId }:BlockListProps) {
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const load = async () => {
     setLoading(true);
@@ -15,7 +27,7 @@ export default function BlockList({ userId }) {
 
   useEffect(() => { load(); }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string): Promise<void> => {
     await fetch("/api/blocks/delete", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },

@@ -4,9 +4,24 @@ import { supaBase } from "@/lib/supabaseClient";
 import BlockForm from "@/components/BlockForm";
 import BlockList from "@/components/BlockList";
 
+
+interface BlockFormProps {
+  userId: string;
+  onCreated: () => void;
+}
+
+interface BlockListProps {
+  userId: string;
+}
+
+// Ensure the components use the types
+const TypedBlockForm = BlockForm as React.FC<BlockFormProps>;
+const TypedBlockList = BlockList as React.FC<BlockListProps>;
+
+
 export default function Dashboard() {
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const init = async () => {

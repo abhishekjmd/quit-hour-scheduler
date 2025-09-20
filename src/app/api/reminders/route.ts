@@ -2,12 +2,13 @@ import clientPromise from "@/lib/mongodb";
 import { transporter } from "@/utils/email";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { ObjectId } from "mongodb";
+import type { BlockDocument } from "@/lib/models/Block";
 
 export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db("quiet_hours");
-    const coll = db.collection("blocks");
+    const coll = db.collection<BlockDocument>("blocks");
 
     const now = new Date();
     // want blocks starting about 10 minutes from now.
@@ -26,10 +27,10 @@ export async function GET() {
     }
 
     // group by userId
-    const byUser = blocks.reduce((acc, b) => {
+    const byUser: Record<string, BlockDocument[]> = blocks.reduce((acc, b) => {
       (acc[b.userId] ||= []).push(b);
       return acc;
-    }, {});
+    }, {} as Record<string, BlockDocument[]>);
 
     for (const userId of Object.keys(byUser)) {
       const userBlocks = byUser[userId];
@@ -61,7 +62,7 @@ export async function GET() {
         });
 
         // mark all blocks as reminderSent: true
-        const ids = userBlocks.map(b => new ObjectId(b._id));
+        const ids = userBlocks.map(b => new ObjectId(b.userId));
         await coll.updateMany({ _id: { $in: ids } }, { $set: { reminderSent: true } });
       } catch (sendErr) {
         console.error("Failed to send mail to", email, sendErr);
@@ -70,8 +71,10 @@ export async function GET() {
     }
 
     return new Response(JSON.stringify({ message: "Processed reminders" }), { status: 200 });
-  } catch (err) {
+  } catch (err: unknown) {
+    let message = "Unknown error";
+    if (err instanceof Error) message = err.message;
     console.error(err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: message }), { status: 500 });
   }
 }

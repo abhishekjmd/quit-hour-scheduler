@@ -23,8 +23,12 @@ export default function Home() {
         alert("Signed up — confirm via email if required. Now login.");
         setIsLogin(true);
       }
-    } catch (e) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setErr(e.message)
+      } else {
+        setErr("An unexpected error occurred.");
+      }
     }
   };
 

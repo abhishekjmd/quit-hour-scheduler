@@ -1,10 +1,14 @@
-export async function hasOverlap(db, userId, startISO, endISO) {
+import type { BlockDocument } from "@/lib/models/Block";
+import type { Db } from "mongodb";
+
+
+export async function hasOverlap(db:Db, userId:string, startISO:string, endISO:string): Promise<BlockDocument | null> {
   // overlapping condition:
   // new.start < existing.end && new.end > existing.start
   const start = new Date(startISO);
   const end = new Date(endISO);
 
-  return await db.collection("blocks").findOne({
+  return await db.collection<BlockDocument>("blocks").findOne({
     userId,
     $expr: {
       $and: [

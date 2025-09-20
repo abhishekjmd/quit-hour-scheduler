@@ -1,7 +1,12 @@
 "use client";
 import { useState } from "react";
 
-export default function BlockForm({ userId, onCreated }) {
+interface BlockFormProps {
+  userId: string;
+  onCreated?: () => void;
+}
+
+export default function BlockForm({ userId, onCreated }: BlockFormProps) {
   const [startDate, setStartDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -9,12 +14,12 @@ export default function BlockForm({ userId, onCreated }) {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const combineDateTime = (date, time) => {
+  const combineDateTime = (date: string, time: string) => {
     if (!date || !time) return null;
     return new Date(`${date}T${time}:00`);
   };
 
-  const handle = async (e) => {
+  const handle = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e?.preventDefault();
     setErr("");
     setLoading(true);
@@ -42,8 +47,12 @@ export default function BlockForm({ userId, onCreated }) {
       setStartDate(""); setStartTime("");
       setEndDate(""); setEndTime("");
       onCreated?.();
-    } catch (e) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setErr(e.message);
+      } else {
+        setErr("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
