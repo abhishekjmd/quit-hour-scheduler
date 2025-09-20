@@ -1,3 +1,5 @@
+import { ObjectId } from "mongodb";
+
 interface CreateBlockInput {
   userId: string;
   startTime: string | Date; // can be ISO string or Date
@@ -5,6 +7,7 @@ interface CreateBlockInput {
 }
 
 export interface BlockDocument {
+   _id?: ObjectId;  
   userId: string;
   startTime: string;  // stored as ISO string
   endTime: string;    // stored as ISO string

@@ -11,12 +11,9 @@ export async function GET() {
     const coll = db.collection<BlockDocument>("blocks");
 
     const now = new Date();
-    // want blocks starting about 10 minutes from now.
-    // We'll select blocks where startTime is between now+10min and now+11min to capture the run.
     const lower = new Date(now.getTime() + 10 * 60000);
     const upper = new Date(now.getTime() + 11 * 60000);
 
-    // find blocks that haven't had reminders sent
     const blocks = await coll.find({
       reminderSent: false,
       startTime: { $gte: lower.toISOString(), $lt: upper.toISOString() },
@@ -26,7 +23,6 @@ export async function GET() {
       return new Response(JSON.stringify({ message: "No reminders" }), { status: 200 });
     }
 
-    // group by userId
     const byUser: Record<string, BlockDocument[]> = blocks.reduce((acc, b) => {
       (acc[b.userId] ||= []).push(b);
       return acc;
@@ -35,16 +31,13 @@ export async function GET() {
     for (const userId of Object.keys(byUser)) {
       const userBlocks = byUser[userId];
 
-      // fetch user's email from Supabase (server-side)
       const { data, error } = await supabaseServer.auth.admin.getUserById(userId);
       if (error || !data?.user?.email) {
         console.error("Could not fetch user email for", userId, error);
-        // optionally mark as failed or skip marking so future runs can try again
         continue;
       }
       const email = data.user.email;
 
-      // build message: list block times
       const lines = userBlocks.map(b => {
         const start = new Date(b.startTime).toLocaleString();
         const end = new Date(b.endTime).toLocaleString();
@@ -61,12 +54,11 @@ export async function GET() {
           text,
         });
 
-        // mark all blocks as reminderSent: true
-        const ids = userBlocks.map(b => new ObjectId(b.userId));
+        // ✅ Mark blocks as sent using _id, not userId
+        const ids = userBlocks.map(b => new ObjectId(b._id));
         await coll.updateMany({ _id: { $in: ids } }, { $set: { reminderSent: true } });
       } catch (sendErr) {
         console.error("Failed to send mail to", email, sendErr);
-        // don't mark sent so next cron attempt can retry
       }
     }
 
